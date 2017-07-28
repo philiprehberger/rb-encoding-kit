@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'encoding_kit/version'
+require_relative 'encoding_kit/detection_result'
 require_relative 'encoding_kit/detector'
 require_relative 'encoding_kit/converter'
 
@@ -12,11 +13,77 @@ module Philiprehberger
     BOMS = Detector::BOMS
 
     # Detect the encoding of a string via BOM and heuristics.
+    # Returns a DetectionResult that delegates to the underlying Encoding,
+    # so it can be compared directly (e.g., result == Encoding::UTF_8)
+    # while also providing a confidence score via result.confidence.
     #
     # @param string [String] the input string
-    # @return [Encoding] the detected encoding
+    # @return [DetectionResult] the detected encoding with confidence score
     def self.detect(string)
       Detector.call(string)
+    end
+
+    # Detect encoding from an IO stream by reading a sample of bytes.
+    # The IO position is restored after reading (if the IO supports seek).
+    #
+    # @param io [IO, StringIO] the IO object to read from
+    # @param sample_size [Integer] number of bytes to sample (default: 4096)
+    # @return [DetectionResult] the detected encoding with confidence score
+    def self.detect_stream(io, sample_size: 4096)
+      original_pos = io.respond_to?(:pos) ? io.pos : nil
+      sample = io.read(sample_size)
+
+      if original_pos && io.respond_to?(:seek)
+        io.seek(original_pos)
+      end
+
+      return DetectionResult.new(Encoding::BINARY, 0.5) if sample.nil? || sample.empty?
+
+      Detector.call(sample)
+    end
+
+    # Analyze a string and return detailed byte distribution statistics
+    # along with encoding candidates ranked by confidence.
+    #
+    # @param string [String] the input string
+    # @return [Hash] analysis results with keys :encoding, :confidence,
+    #   :printable_ratio, :ascii_ratio, :high_bytes, :candidates
+    def self.analyze(string)
+      bytes = string.b
+      total = bytes.bytesize.to_f
+
+      if total.zero?
+        return {
+          encoding: Encoding::BINARY,
+          confidence: 0.5,
+          printable_ratio: 0.0,
+          ascii_ratio: 0.0,
+          high_bytes: 0,
+          candidates: [{ encoding: Encoding::BINARY, confidence: 0.5 }]
+        }
+      end
+
+      ascii_count = 0
+      printable_count = 0
+      high_byte_count = 0
+
+      bytes.each_byte do |b|
+        ascii_count += 1 if b < 128
+        printable_count += 1 if (0x20..0x7E).cover?(b) || b == 0x09 || b == 0x0A || b == 0x0D
+        high_byte_count += 1 if b >= 128
+      end
+
+      primary = Detector.call(bytes)
+      candidates = build_candidates(bytes, primary)
+
+      {
+        encoding: primary.encoding,
+        confidence: primary.confidence,
+        printable_ratio: (printable_count / total).round(4),
+        ascii_ratio: (ascii_count / total).round(4),
+        high_bytes: high_byte_count,
+        candidates: candidates
+      }
     end
 
     # Convert a string to UTF-8, auto-detecting source encoding if not specified.
@@ -61,6 +128,23 @@ module Philiprehberger
       Converter.convert(string, from: from, to: to)
     end
 
+    # Transcode a string to the target encoding, auto-detecting the source.
+    # Simpler API for the most common conversion pattern.
+    #
+    # @param string [String] the input string
+    # @param to [String, Encoding] target encoding (default: UTF-8)
+    # @param fallback [Symbol] fallback strategy (:replace or :raise)
+    # @param replace [String] replacement character for invalid bytes
+    # @return [String] the transcoded string
+    # @raise [EncodingKit::Error] on conversion failure when fallback is :raise
+    def self.transcode(string, to: Encoding::UTF_8, fallback: :replace, replace: '?')
+      detected = Detector.call(string)
+      source = detected.encoding
+      target = to.is_a?(Encoding) ? to : Encoding.find(to.to_s)
+
+      Converter.convert(string, from: source, to: target, fallback: fallback, replace: replace)
+    end
+
     # Remove a byte order mark from the beginning of a string.
     #
     # @param string [String] the input string
@@ -83,6 +167,42 @@ module Philiprehberger
     def self.bom?(string)
       bytes = string.b
       BOMS.any? { |bom, _encoding| bytes.start_with?(bom) }
+    end
+
+    # Build a list of encoding candidates with confidence scores.
+    #
+    # @param bytes [String] binary string
+    # @param primary [DetectionResult] the primary detection result
+    # @return [Array<Hash>] candidates sorted by confidence (descending)
+    private_class_method def self.build_candidates(bytes, primary)
+      candidates = [{ encoding: primary.encoding, confidence: primary.confidence }]
+
+      # Check UTF-8 validity as a candidate
+      utf8_dup = bytes.dup.force_encoding(Encoding::UTF_8)
+      if utf8_dup.valid_encoding? && primary.encoding != Encoding::UTF_8
+        candidates << { encoding: Encoding::UTF_8, confidence: 0.6 }
+      end
+
+      # Check ASCII as a candidate
+      if bytes.each_byte.all? { |b| b < 128 } && primary.encoding != Encoding::US_ASCII
+        candidates << { encoding: Encoding::US_ASCII, confidence: 0.5 }
+      end
+
+      # Always consider Latin-1 for high-byte content
+      high_bytes = bytes.each_byte.any? { |b| b >= 128 }
+      if high_bytes && primary.encoding != Encoding::ISO_8859_1
+        candidates << { encoding: Encoding::ISO_8859_1, confidence: 0.5 }
+      end
+
+      # Consider Windows codepages for high-byte content
+      if high_bytes
+        has_control_high = bytes.each_byte.any? { |b| (0x80..0x9F).cover?(b) }
+        if has_control_high && primary.encoding != Encoding::Windows_1252
+          candidates << { encoding: Encoding::Windows_1252, confidence: 0.5 }
+        end
+      end
+
+      candidates.sort_by { |c| -c[:confidence] }
     end
   end
 end

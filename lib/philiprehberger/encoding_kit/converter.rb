@@ -35,7 +35,8 @@ module Philiprehberger
         # @param from [String, Encoding, nil] source encoding (auto-detect if nil)
         # @return [String] UTF-8 encoded string
         def to_utf8(string, from: nil)
-          source = from ? Encoding.find(from.to_s) : Detector.call(string)
+          detected = from ? Encoding.find(from.to_s) : Detector.call(string)
+          source = detected.is_a?(DetectionResult) ? detected.encoding : detected
           str = string.dup.force_encoding(source)
           str.encode(Encoding::UTF_8, invalid: :replace, undef: :replace, replace: "\uFFFD")
         end
