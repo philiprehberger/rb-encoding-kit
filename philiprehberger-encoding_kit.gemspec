@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email = ['me@philiprehberger.com']
   spec.summary = 'Character encoding detection, conversion, and normalization'
   spec.description = 'Detect encoding from BOM and heuristics with confidence scores, convert between encodings, ' \
-                       'normalize to UTF-8, analyze byte distributions, and handle Windows codepages. Zero dependencies.'
+                     'normalize to UTF-8, analyze byte distributions, and handle Windows codepages. Zero dependencies.'
   spec.homepage = 'https://philiprehberger.com/open-source-packages/ruby/philiprehberger-encoding_kit'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.1.0'
