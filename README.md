@@ -131,6 +131,27 @@ Philiprehberger::EncodingKit.bom?("\xEF\xBB\xBFhello")       # => true
 Philiprehberger::EncodingKit.strip_bom("\xEF\xBB\xBFhello")  # => "hello"
 ```
 
+### File Operations
+
+```ruby
+require "philiprehberger/encoding_kit"
+
+# Detect a file's encoding
+result = Philiprehberger::EncodingKit.detect_file("data.csv")
+result.encoding   # => Encoding::UTF_8
+result.confidence # => 0.9
+
+# Read a file as UTF-8 (auto-detects source encoding)
+content = Philiprehberger::EncodingKit.read_as_utf8("legacy.txt")
+content.encoding # => Encoding::UTF_8
+
+# Read with explicit source encoding
+content = Philiprehberger::EncodingKit.read_as_utf8("latin1.txt", from: Encoding::ISO_8859_1)
+
+# Check if a file's encoding is valid
+Philiprehberger::EncodingKit.file_valid?("data.csv", encoding: Encoding::UTF_8)  # => true
+```
+
 ### Validity Check
 
 ```ruby
@@ -155,6 +176,9 @@ Philiprehberger::EncodingKit.valid?("hello", encoding: Encoding::US_ASCII)  # =>
 | `EncodingKit.convert(string, from:, to:)` | Convert between arbitrary encodings |
 | `EncodingKit.strip_bom(string)` | Remove byte order mark if present |
 | `EncodingKit.bom?(string)` | Check if string starts with a BOM |
+| `EncodingKit.detect_file(path, sample_size: 4096)` | Detect encoding of a file by reading a byte sample |
+| `EncodingKit.read_as_utf8(path, from: nil)` | Read a file and return its content as UTF-8 |
+| `EncodingKit.file_valid?(path, encoding: nil)` | Check if a file's content is valid in the given encoding |
 
 ## Development
 

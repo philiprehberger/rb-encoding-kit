@@ -169,6 +169,38 @@ module Philiprehberger
       BOMS.any? { |bom, _encoding| bytes.start_with?(bom) }
     end
 
+    # Detect the encoding of a file by reading a byte sample.
+    #
+    # @param path [String] path to the file
+    # @param sample_size [Integer] number of bytes to sample (default: 4096)
+    # @return [DetectionResult] the detected encoding with confidence score
+    def self.detect_file(path, sample_size: 4096)
+      File.open(path, 'rb') do |file|
+        detect_stream(file, sample_size: sample_size)
+      end
+    end
+
+    # Read a file and return its content as UTF-8.
+    # Auto-detects the source encoding unless specified via `from:`.
+    #
+    # @param path [String] path to the file
+    # @param from [String, Encoding, nil] source encoding (auto-detect if nil)
+    # @return [String] UTF-8 encoded file content
+    def self.read_as_utf8(path, from: nil)
+      raw = File.binread(path)
+      to_utf8(raw, from: from)
+    end
+
+    # Check if a file's content is valid in the detected or specified encoding.
+    #
+    # @param path [String] path to the file
+    # @param encoding [String, Encoding, nil] encoding to check against (auto-detect if nil)
+    # @return [Boolean]
+    def self.file_valid?(path, encoding: nil)
+      raw = File.binread(path)
+      valid?(raw, encoding: encoding)
+    end
+
     # Build a list of encoding candidates with confidence scores.
     #
     # @param bytes [String] binary string
