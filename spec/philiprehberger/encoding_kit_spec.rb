@@ -224,7 +224,7 @@ RSpec.describe Philiprehberger::EncodingKit do
 
     it 'detects CP1252 with higher confidence for many specific bytes' do
       # Multiple CP1252-specific bytes: euro sign (0x80), smart quotes, em dash (0x97)
-      cp1252 = "Price: \x80#{"100 \x93quoted\x94 text \x96 more \x97 stuff".b}"
+      cp1252 = "Price: \x80 100 \x93quoted\x94 text \x96 more \x97 stuff".b
       result = described_class.detect(cp1252)
       expect(result).to eq(Encoding::Windows_1252)
       expect(result.confidence).to eq(0.7)
