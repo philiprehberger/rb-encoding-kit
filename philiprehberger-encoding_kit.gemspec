@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Philip Rehberger']
   spec.email         = ['me@philiprehberger.com']
   spec.summary       = 'Character encoding detection, conversion, and normalization'
-  spec.description   = 'Detect encoding from BOM and heuristics, convert between encodings, normalize to UTF-8, ' \
-                       'and strip byte order marks. Zero dependencies.'
+  spec.description   = 'Detect encoding from BOM and heuristics with confidence scores, convert between encodings, ' \
+                       'normalize to UTF-8, analyze byte distributions, and handle Windows codepages. Zero dependencies.'
   spec.homepage      = 'https://github.com/philiprehberger/rb-encoding-kit'
   spec.license       = 'MIT'
   spec.required_ruby_version = '>= 3.1.0'

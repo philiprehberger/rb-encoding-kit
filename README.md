@@ -2,7 +2,11 @@
 
 [![Tests](https://github.com/philiprehberger/rb-encoding-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/philiprehberger/rb-encoding-kit/actions/workflows/ci.yml)
 [![Gem Version](https://badge.fury.io/rb/philiprehberger-encoding_kit.svg)](https://rubygems.org/gems/philiprehberger-encoding_kit)
+[![GitHub release](https://img.shields.io/github/v/release/philiprehberger/rb-encoding-kit)](https://github.com/philiprehberger/rb-encoding-kit/releases)
+[![Last updated](https://img.shields.io/github/last-commit/philiprehberger/rb-encoding-kit)](https://github.com/philiprehberger/rb-encoding-kit/commits/main)
 [![License](https://img.shields.io/github/license/philiprehberger/rb-encoding-kit)](LICENSE)
+[![Bug Reports](https://img.shields.io/github/issues/philiprehberger/rb-encoding-kit/bug)](https://github.com/philiprehberger/rb-encoding-kit/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
+[![Feature Requests](https://img.shields.io/github/issues/philiprehberger/rb-encoding-kit/enhancement)](https://github.com/philiprehberger/rb-encoding-kit/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 [![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ec6cb9)](https://github.com/sponsors/philiprehberger)
 
 Character encoding detection, conversion, and normalization
@@ -30,19 +34,68 @@ gem install philiprehberger-encoding_kit
 ```ruby
 require "philiprehberger/encoding_kit"
 
-encoding = Philiprehberger::EncodingKit.detect(raw_bytes)
+result = Philiprehberger::EncodingKit.detect(raw_bytes)
+result.encoding   # => Encoding::UTF_8
+result.confidence # => 0.9
 utf8 = Philiprehberger::EncodingKit.to_utf8(raw_bytes)
 ```
 
-### Encoding Detection
+### Encoding Detection with Confidence
 
 ```ruby
 require "philiprehberger/encoding_kit"
 
-# Detects via BOM first, then UTF-8 validity, ASCII, Latin-1 heuristics
-Philiprehberger::EncodingKit.detect("\xEF\xBB\xBFhello".b) # => Encoding::UTF_8
-Philiprehberger::EncodingKit.detect("caf\xC3\xA9".b)       # => Encoding::UTF_8
-Philiprehberger::EncodingKit.detect("caf\xE9".b)            # => Encoding::ISO_8859_1
+# Returns a DetectionResult that delegates to Encoding
+result = Philiprehberger::EncodingKit.detect("\xEF\xBB\xBFhello".b)
+result == Encoding::UTF_8  # => true (backward compatible)
+result.confidence          # => 1.0 (BOM detected)
+result.name                # => "UTF-8"
+result.to_h                # => {encoding: Encoding::UTF_8, confidence: 1.0}
+
+# Heuristic detection returns lower confidence
+result = Philiprehberger::EncodingKit.detect("caf\xC3\xA9".b)
+result.confidence # => 0.85-0.9
+```
+
+### Streaming Detection
+
+```ruby
+require "philiprehberger/encoding_kit"
+
+File.open("data.csv", "rb") do |file|
+  result = Philiprehberger::EncodingKit.detect_stream(file, sample_size: 8192)
+  result.encoding   # => Encoding::UTF_8
+  result.confidence # => 0.9
+end
+```
+
+### Encoding Analysis
+
+```ruby
+require "philiprehberger/encoding_kit"
+
+analysis = Philiprehberger::EncodingKit.analyze(raw_bytes)
+analysis[:encoding]       # => Encoding::UTF_8
+analysis[:confidence]     # => 0.9
+analysis[:printable_ratio] # => 0.95
+analysis[:ascii_ratio]    # => 0.8
+analysis[:high_bytes]     # => 12
+analysis[:candidates]     # => [{encoding: Encoding::UTF_8, confidence: 0.9}, ...]
+```
+
+### Transcode
+
+```ruby
+require "philiprehberger/encoding_kit"
+
+# Auto-detect source, convert to UTF-8
+utf8 = Philiprehberger::EncodingKit.transcode(raw_bytes)
+
+# Convert to a specific encoding
+latin1 = Philiprehberger::EncodingKit.transcode(utf8_string, to: Encoding::ISO_8859_1)
+
+# Custom fallback behavior
+result = Philiprehberger::EncodingKit.transcode(data, to: "UTF-8", fallback: :replace, replace: "?")
 ```
 
 ### Convert to UTF-8
@@ -97,7 +150,10 @@ Philiprehberger::EncodingKit.valid?("hello", encoding: Encoding::US_ASCII)  # =>
 
 | Method | Description |
 |--------|-------------|
-| `EncodingKit.detect(string)` | Detect encoding via BOM and heuristics, returns an `Encoding` object |
+| `EncodingKit.detect(string)` | Detect encoding via BOM and heuristics, returns a `DetectionResult` with `.encoding` and `.confidence` |
+| `EncodingKit.detect_stream(io, sample_size: 4096)` | Detect encoding from an IO stream by sampling bytes |
+| `EncodingKit.analyze(string)` | Analyze byte distribution and return encoding candidates with stats |
+| `EncodingKit.transcode(string, to:, fallback:, replace:)` | Auto-detect source and convert to target encoding |
 | `EncodingKit.to_utf8(string, from: nil)` | Convert to UTF-8, auto-detect source if `from` is nil |
 | `EncodingKit.normalize(string)` | Force to valid UTF-8, replacing bad bytes with U+FFFD |
 | `EncodingKit.valid?(string, encoding: nil)` | Check if string is valid in given or current encoding |
@@ -112,6 +168,13 @@ bundle install
 bundle exec rspec
 bundle exec rubocop
 ```
+
+## Support
+
+If you find this package useful, consider giving it a star on GitHub — it helps motivate continued maintenance and development.
+
+[![LinkedIn](https://img.shields.io/badge/Philip%20Rehberger-LinkedIn-0A66C2?logo=linkedin)](https://www.linkedin.com/in/philiprehberger)
+[![More packages](https://img.shields.io/badge/more-open%20source%20packages-blue)](https://philiprehberger.com/open-source-packages)
 
 ## License
 
