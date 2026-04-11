@@ -2,6 +2,7 @@
 
 require 'spec_helper'
 require 'stringio'
+require 'tempfile'
 
 RSpec.describe Philiprehberger::EncodingKit do
   it 'has a version number' do
@@ -395,6 +396,128 @@ RSpec.describe Philiprehberger::EncodingKit do
 
     it 'returns false when no BOM is present' do
       expect(described_class.bom?('hello')).to be false
+    end
+  end
+
+  describe '.detect_file' do
+    it 'detects UTF-8 encoding from a file' do
+      Tempfile.create(['encoding_test', '.txt']) do |f|
+        f.binmode
+        f.write("caf\xC3\xA9")
+        f.flush
+        result = described_class.detect_file(f.path)
+        expect(result).to eq(Encoding::UTF_8)
+        expect(result.confidence).to be_between(0.8, 0.9)
+      end
+    end
+
+    it 'detects BOM with confidence 1.0' do
+      Tempfile.create(['bom_test', '.txt']) do |f|
+        f.binmode
+        f.write("\xEF\xBB\xBFhello world")
+        f.flush
+        result = described_class.detect_file(f.path)
+        expect(result).to eq(Encoding::UTF_8)
+        expect(result.confidence).to eq(1.0)
+      end
+    end
+
+    it 'respects sample_size parameter' do
+      Tempfile.create(['sample_test', '.txt']) do |f|
+        f.binmode
+        f.write("caf\xC3\xA9 " * 1000)
+        f.flush
+        result = described_class.detect_file(f.path, sample_size: 16)
+        expect(result.confidence).to be > 0.0
+      end
+    end
+
+    it 'raises Errno::ENOENT for missing files' do
+      expect { described_class.detect_file('/tmp/nonexistent_file_xyz.txt') }.to raise_error(Errno::ENOENT)
+    end
+
+    it 'handles empty files' do
+      Tempfile.create(['empty_test', '.txt']) do |f|
+        f.flush
+        result = described_class.detect_file(f.path)
+        expect(result).to eq(Encoding::BINARY)
+        expect(result.confidence).to eq(0.5)
+      end
+    end
+  end
+
+  describe '.read_as_utf8' do
+    it 'reads a UTF-8 file and returns UTF-8 string' do
+      Tempfile.create(['read_test', '.txt']) do |f|
+        f.binmode
+        f.write("caf\xC3\xA9")
+        f.flush
+        result = described_class.read_as_utf8(f.path)
+        expect(result.encoding).to eq(Encoding::UTF_8)
+        expect(result.valid_encoding?).to be true
+      end
+    end
+
+    it 'reads a Latin-1 file with auto-detection' do
+      Tempfile.create(['latin1_test', '.txt']) do |f|
+        f.binmode
+        f.write("caf\xE9")
+        f.flush
+        result = described_class.read_as_utf8(f.path)
+        expect(result.encoding).to eq(Encoding::UTF_8)
+        expect(result.valid_encoding?).to be true
+      end
+    end
+
+    it 'reads with explicit from: encoding' do
+      Tempfile.create(['explicit_test', '.txt']) do |f|
+        f.binmode
+        f.write("caf\xE9")
+        f.flush
+        result = described_class.read_as_utf8(f.path, from: Encoding::ISO_8859_1)
+        expect(result.encoding).to eq(Encoding::UTF_8)
+        expect(result).to include("\u00E9")
+      end
+    end
+
+    it 'replaces invalid bytes with replacement character' do
+      Tempfile.create(['invalid_test', '.txt']) do |f|
+        f.binmode
+        f.write("\xFF\xFE")
+        f.flush
+        result = described_class.read_as_utf8(f.path, from: Encoding::UTF_8)
+        expect(result.encoding).to eq(Encoding::UTF_8)
+        expect(result.valid_encoding?).to be true
+      end
+    end
+  end
+
+  describe '.file_valid?' do
+    it 'returns true for a valid UTF-8 file' do
+      Tempfile.create(['valid_test', '.txt']) do |f|
+        f.binmode
+        f.write("caf\xC3\xA9")
+        f.flush
+        expect(described_class.file_valid?(f.path, encoding: Encoding::UTF_8)).to be true
+      end
+    end
+
+    it 'returns false for invalid bytes in specified encoding' do
+      Tempfile.create(['invalid_test', '.txt']) do |f|
+        f.binmode
+        f.write("\xFF\xFE")
+        f.flush
+        expect(described_class.file_valid?(f.path, encoding: Encoding::UTF_8)).to be false
+      end
+    end
+
+    it 'checks against binary encoding when no encoding specified' do
+      Tempfile.create(['binary_test', '.txt']) do |f|
+        f.binmode
+        f.write("\x00\x01\x02")
+        f.flush
+        expect(described_class.file_valid?(f.path)).to be true
+      end
     end
   end
 end

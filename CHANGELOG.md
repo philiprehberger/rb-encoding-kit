@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-11
+
+### Added
+- `detect_file(path, sample_size:)` for file-based encoding detection
+- `read_as_utf8(path, from:)` to read files directly as UTF-8
+- `file_valid?(path, encoding:)` to check file encoding validity
+
 ## [0.2.1] - 2026-03-31
 
 ### Changed
