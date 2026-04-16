@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-20
+
+### Added
+- `guess_from_filename(path)` — extract an encoding hint from filename extensions (`.utf8`, `.utf-16`, `.latin1`, `.cp1252`, `.sjis`, etc.). Returns `nil` when no hint is present so callers can fall back to byte-based detection
+- `FILENAME_ENCODING_HINTS` constant exposing the suffix → `Encoding` lookup table
+
 ## [0.3.0] - 2026-04-11
 
 ### Added
