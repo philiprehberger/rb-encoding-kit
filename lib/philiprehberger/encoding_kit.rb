@@ -201,6 +201,62 @@ module Philiprehberger
       valid?(raw, encoding: encoding)
     end
 
+    # Filename suffix / extension hints that imply a specific encoding.
+    # Matched against the final two extension tokens of the filename.
+    FILENAME_ENCODING_HINTS = {
+      'utf8' => Encoding::UTF_8,
+      'utf-8' => Encoding::UTF_8,
+      'utf16' => Encoding::UTF_16,
+      'utf-16' => Encoding::UTF_16,
+      'utf16le' => Encoding::UTF_16LE,
+      'utf-16le' => Encoding::UTF_16LE,
+      'utf16be' => Encoding::UTF_16BE,
+      'utf-16be' => Encoding::UTF_16BE,
+      'utf32' => Encoding::UTF_32,
+      'utf-32' => Encoding::UTF_32,
+      'ascii' => Encoding::US_ASCII,
+      'us-ascii' => Encoding::US_ASCII,
+      'latin1' => Encoding::ISO_8859_1,
+      'latin-1' => Encoding::ISO_8859_1,
+      'iso88591' => Encoding::ISO_8859_1,
+      'iso-8859-1' => Encoding::ISO_8859_1,
+      'iso88592' => Encoding::ISO_8859_2,
+      'iso-8859-2' => Encoding::ISO_8859_2,
+      'cp1252' => Encoding::Windows_1252,
+      'windows1252' => Encoding::Windows_1252,
+      'windows-1252' => Encoding::Windows_1252,
+      'sjis' => Encoding::Shift_JIS,
+      'shiftjis' => Encoding::Shift_JIS,
+      'shift-jis' => Encoding::Shift_JIS,
+      'shift_jis' => Encoding::Shift_JIS,
+      'euc-jp' => Encoding::EUC_JP,
+      'eucjp' => Encoding::EUC_JP,
+      'gbk' => Encoding::GBK,
+      'gb2312' => Encoding::GB2312,
+      'big5' => Encoding::Big5
+    }.freeze
+
+    # Guess the encoding based on filename suffixes/extensions alone.
+    # Useful when a file name carries an explicit encoding hint
+    # (e.g., "data.utf8.csv", "legacy.latin1.txt"). Falls back to nil
+    # when no hint can be extracted — callers should then use
+    # {.detect_file} to inspect the bytes.
+    #
+    # Matching is case-insensitive and considers the final two
+    # file extension tokens; the rightmost recognizable hint wins.
+    #
+    # @param filename [String] filename or path
+    # @return [Encoding, nil] detected encoding or nil when no hint matches
+    def self.guess_from_filename(filename)
+      name = File.basename(filename.to_s).downcase
+      tokens = name.split('.').last(3) # extension + up to two modifiers
+      tokens.reverse_each do |token|
+        enc = FILENAME_ENCODING_HINTS[token]
+        return enc if enc
+      end
+      nil
+    end
+
     # Build a list of encoding candidates with confidence scores.
     #
     # @param bytes [String] binary string

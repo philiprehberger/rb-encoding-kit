@@ -520,6 +520,36 @@ RSpec.describe Philiprehberger::EncodingKit do
       end
     end
   end
+
+  describe '.guess_from_filename' do
+    it 'returns UTF-8 for .utf8 extension' do
+      expect(described_class.guess_from_filename('data.utf8.csv')).to eq(Encoding::UTF_8)
+    end
+
+    it 'returns Latin-1 for .latin1 hint' do
+      expect(described_class.guess_from_filename('legacy.latin1.txt')).to eq(Encoding::ISO_8859_1)
+    end
+
+    it 'recognises UTF-16 hint' do
+      expect(described_class.guess_from_filename('snapshot.UTF-16.xml')).to eq(Encoding::UTF_16)
+    end
+
+    it 'recognises windows-1252' do
+      expect(described_class.guess_from_filename('file.cp1252.csv')).to eq(Encoding::Windows_1252)
+    end
+
+    it 'strips path components before matching' do
+      expect(described_class.guess_from_filename('/srv/data/archive.utf-8.log')).to eq(Encoding::UTF_8)
+    end
+
+    it 'returns nil when no hint is present' do
+      expect(described_class.guess_from_filename('report.csv')).to be_nil
+    end
+
+    it 'returns nil for empty string' do
+      expect(described_class.guess_from_filename('')).to be_nil
+    end
+  end
 end
 
 RSpec.describe Philiprehberger::EncodingKit::DetectionResult do

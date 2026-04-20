@@ -150,6 +150,11 @@ content = Philiprehberger::EncodingKit.read_as_utf8("latin1.txt", from: Encoding
 
 # Check if a file's encoding is valid
 Philiprehberger::EncodingKit.file_valid?("data.csv", encoding: Encoding::UTF_8)  # => true
+
+# Guess encoding from a filename hint without reading the bytes
+Philiprehberger::EncodingKit.guess_from_filename("data.utf8.csv")    # => Encoding::UTF_8
+Philiprehberger::EncodingKit.guess_from_filename("legacy.latin1.txt") # => Encoding::ISO_8859_1
+Philiprehberger::EncodingKit.guess_from_filename("report.csv")        # => nil
 ```
 
 ### Validity Check
@@ -179,6 +184,7 @@ Philiprehberger::EncodingKit.valid?("hello", encoding: Encoding::US_ASCII)  # =>
 | `EncodingKit.detect_file(path, sample_size: 4096)` | Detect encoding of a file by reading a byte sample |
 | `EncodingKit.read_as_utf8(path, from: nil)` | Read a file and return its content as UTF-8 |
 | `EncodingKit.file_valid?(path, encoding: nil)` | Check if a file's content is valid in the given encoding |
+| `EncodingKit.guess_from_filename(path)` | Guess `Encoding` from filename suffixes (e.g. `.utf8`, `.latin1`), `nil` if unknown |
 
 ## Development
 
