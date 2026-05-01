@@ -550,6 +550,39 @@ RSpec.describe Philiprehberger::EncodingKit do
       expect(described_class.guess_from_filename('')).to be_nil
     end
   end
+
+  describe '.scrub' do
+    it 'removes invalid byte sequences entirely' do
+      input = "foo\xFFbar".dup.force_encoding(Encoding::UTF_8)
+      expect(described_class.scrub(input)).to eq('foobar')
+    end
+
+    it 'returns the original string when already valid UTF-8' do
+      expect(described_class.scrub('hello')).to eq('hello')
+    end
+  end
+
+  describe '.normalize_line_endings' do
+    it 'converts mixed line endings to LF by default' do
+      input = "alpha\r\nbeta\rgamma\ndelta"
+      expect(described_class.normalize_line_endings(input)).to eq("alpha\nbeta\ngamma\ndelta")
+    end
+
+    it 'converts to CRLF when requested' do
+      input = "alpha\nbeta\rgamma"
+      expect(described_class.normalize_line_endings(input, to: :crlf)).to eq("alpha\r\nbeta\r\ngamma")
+    end
+
+    it 'converts to CR when requested' do
+      input = "alpha\r\nbeta\ngamma"
+      expect(described_class.normalize_line_endings(input, to: :cr)).to eq("alpha\rbeta\rgamma")
+    end
+
+    it 'raises on unknown target' do
+      expect { described_class.normalize_line_endings('a', to: :lol) }
+        .to raise_error(Philiprehberger::EncodingKit::Error, /Unknown line ending/)
+    end
+  end
 end
 
 RSpec.describe Philiprehberger::EncodingKit::DetectionResult do

@@ -53,6 +53,20 @@ module Philiprehberger
 
           str.encode(Encoding::UTF_8, str.encoding, invalid: :replace, undef: :replace, replace: "\uFFFD")
         end
+
+        # Strip invalid bytes from a string, returning valid UTF-8 with bad bytes removed.
+        #
+        # Unlike {.normalize}, which replaces invalid bytes with `\uFFFD`, this method
+        # removes them entirely \u2014 useful when downstream consumers cannot tolerate
+        # any non-source content.
+        #
+        # @param string [String] the input string
+        # @return [String] valid UTF-8 string with invalid bytes removed
+        def scrub(string)
+          str = string.dup
+          str.force_encoding(Encoding::UTF_8) if [Encoding::BINARY, Encoding::ASCII_8BIT].include?(str.encoding)
+          str.scrub('')
+        end
       end
     end
   end

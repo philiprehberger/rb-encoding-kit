@@ -157,6 +157,26 @@ Philiprehberger::EncodingKit.guess_from_filename("legacy.latin1.txt") # => Encod
 Philiprehberger::EncodingKit.guess_from_filename("report.csv")        # => nil
 ```
 
+### Stripping Invalid Bytes
+
+```ruby
+# normalize replaces invalid bytes with U+FFFD ('�')
+Philiprehberger::EncodingKit.normalize("foo\xFFbar")  # => "foo�bar"
+
+# scrub removes them entirely
+Philiprehberger::EncodingKit.scrub("foo\xFFbar")      # => "foobar"
+```
+
+### Normalizing Line Endings
+
+```ruby
+mixed = "alpha\r\nbeta\rgamma\ndelta"
+
+Philiprehberger::EncodingKit.normalize_line_endings(mixed)              # => "alpha\nbeta\ngamma\ndelta"
+Philiprehberger::EncodingKit.normalize_line_endings(mixed, to: :crlf)   # => "alpha\r\nbeta\r\ngamma\r\ndelta"
+Philiprehberger::EncodingKit.normalize_line_endings(mixed, to: :cr)     # => "alpha\rbeta\rgamma\rdelta"
+```
+
 ### Validity Check
 
 ```ruby
@@ -177,6 +197,8 @@ Philiprehberger::EncodingKit.valid?("hello", encoding: Encoding::US_ASCII)  # =>
 | `EncodingKit.transcode(string, to:, fallback:, replace:)` | Auto-detect source and convert to target encoding |
 | `EncodingKit.to_utf8(string, from: nil)` | Convert to UTF-8, auto-detect source if `from` is nil |
 | `EncodingKit.normalize(string)` | Force to valid UTF-8, replacing bad bytes with U+FFFD |
+| `EncodingKit.scrub(string)` | Force to valid UTF-8 by removing invalid bytes entirely |
+| `EncodingKit.normalize_line_endings(string, to: :lf)` | Convert mixed CRLF/CR/LF to a single canonical form (`:lf`, `:crlf`, `:cr`) |
 | `EncodingKit.valid?(string, encoding: nil)` | Check if string is valid in given or current encoding |
 | `EncodingKit.convert(string, from:, to:)` | Convert between arbitrary encodings |
 | `EncodingKit.strip_bom(string)` | Remove byte order mark if present |

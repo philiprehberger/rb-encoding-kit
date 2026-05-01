@@ -104,6 +104,31 @@ module Philiprehberger
       Converter.normalize(string)
     end
 
+    # Strip invalid bytes from a string, returning valid UTF-8.
+    #
+    # Unlike {.normalize}, which replaces invalid bytes with `�`, this method
+    # removes them entirely.
+    #
+    # @param string [String] the input string
+    # @return [String] valid UTF-8 string with invalid bytes removed
+    def self.scrub(string)
+      Converter.scrub(string)
+    end
+
+    LINE_ENDINGS = { lf: "\n", crlf: "\r\n", cr: "\r" }.freeze
+
+    # Normalize line endings to a single canonical form.
+    #
+    # @param string [String] the input string
+    # @param to [Symbol] target line ending: `:lf`, `:crlf`, or `:cr`
+    # @return [String] string with normalized line endings
+    # @raise [Error] if `to:` is not one of `:lf`, `:crlf`, or `:cr`
+    def self.normalize_line_endings(string, to: :lf)
+      target = LINE_ENDINGS[to] or raise Error, "Unknown line ending: #{to.inspect} (expected :lf, :crlf, or :cr)"
+
+      string.gsub(/\r\n|\r|\n/, target)
+    end
+
     # Check if a string is valid in the given encoding (or its current encoding).
     #
     # @param string [String] the input string

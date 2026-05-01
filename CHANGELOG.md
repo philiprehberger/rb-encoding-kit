@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-30
+
+### Added
+- `EncodingKit.scrub(string)` — strip invalid bytes from a string (vs. `normalize` which replaces with `�`)
+- `EncodingKit.normalize_line_endings(string, to:)` — convert mixed CRLF/CR/LF to a single canonical form (`:lf`, `:crlf`, or `:cr`)
+- `Converter.scrub` companion method on the `Converter` module
+
 ## [0.4.0] - 2026-04-20
 
 ### Added
