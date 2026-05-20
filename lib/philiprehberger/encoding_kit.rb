@@ -90,9 +90,10 @@ module Philiprehberger
     #
     # @param string [String] the input string
     # @param from [String, Encoding, nil] source encoding (auto-detect if nil)
+    # @param strip_bom [Boolean] remove any leading UTF BOM from the result (default: false)
     # @return [String] UTF-8 encoded string
-    def self.to_utf8(string, from: nil)
-      Converter.to_utf8(string, from: from)
+    def self.to_utf8(string, from: nil, strip_bom: false)
+      Converter.to_utf8(string, from: from, strip_bom: strip_bom)
     end
 
     # Normalize a string to valid UTF-8, replacing invalid/undefined bytes
@@ -210,10 +211,11 @@ module Philiprehberger
     #
     # @param path [String] path to the file
     # @param from [String, Encoding, nil] source encoding (auto-detect if nil)
+    # @param strip_bom [Boolean] remove any leading UTF BOM from the result (default: false)
     # @return [String] UTF-8 encoded file content
-    def self.read_as_utf8(path, from: nil)
+    def self.read_as_utf8(path, from: nil, strip_bom: false)
       raw = File.binread(path)
-      to_utf8(raw, from: from)
+      to_utf8(raw, from: from, strip_bom: strip_bom)
     end
 
     # Check if a file's content is valid in the detected or specified encoding.

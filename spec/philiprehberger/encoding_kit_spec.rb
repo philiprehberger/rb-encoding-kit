@@ -313,6 +313,25 @@ RSpec.describe Philiprehberger::EncodingKit do
       result = described_class.to_utf8(bad, from: Encoding::UTF_8)
       expect(result.valid_encoding?).to be true
     end
+
+    it 'preserves the UTF-8 BOM by default' do
+      input = "\xEF\xBB\xBFhello".b
+      expect(described_class.to_utf8(input)).to eq('﻿hello')
+    end
+
+    it 'strips the UTF-8 BOM when strip_bom: true' do
+      input = "\xEF\xBB\xBFhello".b
+      expect(described_class.to_utf8(input, strip_bom: true)).to eq('hello')
+    end
+
+    it 'strips the BOM after transcoding a UTF-16 source' do
+      utf16 = "\xFF\xFEh\x00i\x00".b
+      expect(described_class.to_utf8(utf16, strip_bom: true)).to eq('hi')
+    end
+
+    it 'is a no-op when strip_bom: true and no BOM is present' do
+      expect(described_class.to_utf8('hello', strip_bom: true)).to eq('hello')
+    end
   end
 
   describe '.normalize' do

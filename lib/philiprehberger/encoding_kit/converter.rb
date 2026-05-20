@@ -33,12 +33,14 @@ module Philiprehberger
         #
         # @param string [String] the input string
         # @param from [String, Encoding, nil] source encoding (auto-detect if nil)
+        # @param strip_bom [Boolean] remove any leading UTF BOM from the result (default: false)
         # @return [String] UTF-8 encoded string
-        def to_utf8(string, from: nil)
+        def to_utf8(string, from: nil, strip_bom: false)
           detected = from ? Encoding.find(from.to_s) : Detector.call(string)
           source = detected.is_a?(DetectionResult) ? detected.encoding : detected
           str = string.dup.force_encoding(source)
-          str.encode(Encoding::UTF_8, invalid: :replace, undef: :replace, replace: "\uFFFD")
+          encoded = str.encode(Encoding::UTF_8, invalid: :replace, undef: :replace, replace: "\uFFFD")
+          strip_bom ? encoded.delete_prefix("\uFEFF") : encoded
         end
 
         # Force a string to valid UTF-8 by replacing invalid and undefined bytes.

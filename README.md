@@ -4,6 +4,8 @@
 [![Gem Version](https://badge.fury.io/rb/philiprehberger-encoding_kit.svg)](https://rubygems.org/gems/philiprehberger-encoding_kit)
 [![Last updated](https://img.shields.io/github/last-commit/philiprehberger/rb-encoding-kit)](https://github.com/philiprehberger/rb-encoding-kit/commits/main)
 
+![philiprehberger-encoding_kit](https://raw.githubusercontent.com/philiprehberger/rb-encoding-kit/main/package-card.webp)
+
 Character encoding detection, conversion, and normalization
 
 ## Requirements
@@ -103,6 +105,10 @@ utf8 = Philiprehberger::EncodingKit.to_utf8(raw_bytes)
 
 # Specify source encoding
 utf8 = Philiprehberger::EncodingKit.to_utf8(latin1_string, from: Encoding::ISO_8859_1)
+
+# Strip a leading BOM after transcoding
+clean = Philiprehberger::EncodingKit.to_utf8("\xEF\xBB\xBFhello".b, strip_bom: true)
+# => "hello"
 ```
 
 ### Normalize
@@ -195,7 +201,7 @@ Philiprehberger::EncodingKit.valid?("hello", encoding: Encoding::US_ASCII)  # =>
 | `EncodingKit.detect_stream(io, sample_size: 4096)` | Detect encoding from an IO stream by sampling bytes |
 | `EncodingKit.analyze(string)` | Analyze byte distribution and return encoding candidates with stats |
 | `EncodingKit.transcode(string, to:, fallback:, replace:)` | Auto-detect source and convert to target encoding |
-| `EncodingKit.to_utf8(string, from: nil)` | Convert to UTF-8, auto-detect source if `from` is nil |
+| `EncodingKit.to_utf8(string, from: nil, strip_bom: false)` | Convert to UTF-8, auto-detect source if `from` is nil; pass `strip_bom: true` to drop a leading UTF BOM |
 | `EncodingKit.normalize(string)` | Force to valid UTF-8, replacing bad bytes with U+FFFD |
 | `EncodingKit.scrub(string)` | Force to valid UTF-8 by removing invalid bytes entirely |
 | `EncodingKit.normalize_line_endings(string, to: :lf)` | Convert mixed CRLF/CR/LF to a single canonical form (`:lf`, `:crlf`, `:cr`) |
@@ -204,7 +210,7 @@ Philiprehberger::EncodingKit.valid?("hello", encoding: Encoding::US_ASCII)  # =>
 | `EncodingKit.strip_bom(string)` | Remove byte order mark if present |
 | `EncodingKit.bom?(string)` | Check if string starts with a BOM |
 | `EncodingKit.detect_file(path, sample_size: 4096)` | Detect encoding of a file by reading a byte sample |
-| `EncodingKit.read_as_utf8(path, from: nil)` | Read a file and return its content as UTF-8 |
+| `EncodingKit.read_as_utf8(path, from: nil, strip_bom: false)` | Read a file and return its content as UTF-8; pass `strip_bom: true` to drop a leading UTF BOM |
 | `EncodingKit.file_valid?(path, encoding: nil)` | Check if a file's content is valid in the given encoding |
 | `EncodingKit.guess_from_filename(path)` | Guess `Encoding` from filename suffixes (e.g. `.utf8`, `.latin1`), `nil` if unknown |
 

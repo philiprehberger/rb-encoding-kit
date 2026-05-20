@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-20
+
+### Added
+- `strip_bom:` option on `EncodingKit.to_utf8` and `EncodingKit.read_as_utf8` to drop a leading UTF BOM after transcoding
+- Card image reference in the README for registry-side rendering
+
 ## [0.5.0] - 2026-04-30
 
 ### Added
